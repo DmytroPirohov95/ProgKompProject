@@ -7,6 +7,7 @@ import util.FileUtil;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
@@ -61,8 +62,12 @@ public class Main {
                     int year;
                     try {
                         year = Integer.parseInt(scanner.nextLine());
-                        manager.addBook(new Book(title, author, year));
-                        System.out.println("Dodano książkę.");
+                        boolean added = manager.addBook(new Book(title, author, year));
+                        if (added) {
+                            System.out.println("Dodano książkę.");
+                        } else {
+                            System.out.println("Taka książka już istnieje.");
+                        }
                     } catch (NumberFormatException e) {
                         System.out.println("Niepoprawny rok.");
                     }
@@ -70,12 +75,16 @@ public class Main {
                 case 3:
                     System.out.print("Podaj tytuł książki do usunięcia: ");
                     String titleToDelete = scanner.nextLine();
-                    manager.deleteBook(titleToDelete);
-                    System.out.println("książka została usunięta.");
+                    boolean deleted = manager.deleteBook(titleToDelete);
+                    if (deleted) {
+                        System.out.println("Książka została usunięta.");
+                    } else {
+                        System.out.println("Nie znaleziono książki o podanym tytule.");
+                    }
                     break;
                 case 4:
-                    System.out.print("Podaj frazę do wyszukania: ");
-                    String keyword = scanner.nextLine();
+                    System.out.print("Podaj frazę do wyszukania (pełne słowo lub początek tytułu/autor): ");
+                    String keyword = scanner.nextLine().trim();
                     List<Book> results = manager.findBooks(keyword);
                     if (results.isEmpty()) {
                         System.out.println("Nie znaleziono książek pasujących do podanej frazy.");
@@ -87,7 +96,20 @@ public class Main {
                     }
                     break;
                 case 5:
-                    manager.listBooks();
+                    List<Book> allBooks = manager.getBooks();
+                    if (allBooks.isEmpty()) {
+                        System.out.println("Brak książek w bazie.");
+                    } else {
+       
+                        allBooks.sort(Comparator.comparing(Book::getTitle, String.CASE_INSENSITIVE_ORDER)
+                                .thenComparing(Book::getAuthor, String.CASE_INSENSITIVE_ORDER));
+                        
+                        System.out.printf("%-30s %-20s %-4s%n", "Tytuł", "Autor", "Rok");
+                       
+                        for (Book b : allBooks) {
+                            System.out.printf("%-30s %-20s %-4d%n", b.getTitle(), b.getAuthor(), b.getYear());
+                        }
+                    }
                     break;
                 case 6:
                     try {
@@ -111,12 +133,3 @@ public class Main {
         }
     }
 }
-
-
-//надо пофиксить удаление. искание. проверить додаване. добавить сортоване
-1.удаление:
-когда мы удаляем то чего нет нам пишет что эта книга удалена хоть ее и не было
-2.искание:
-если ввести хоть одну букву которая есть в названии книги то нам выдаст сразу эту книгу, даже если єта буква последняя, а єто неправильно
-3.проверить додаване на функционал
-4.добавить сортоване чтобі например все книги біли упорядочені за алфавитом 
