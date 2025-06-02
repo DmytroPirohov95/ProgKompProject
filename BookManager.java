@@ -2,14 +2,12 @@ package service;
 
 import model.Book;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-/**
- * Klasa zarządzająca książkami. Zawiera operacje CRUD oraz statystyki.
- */
 public class BookManager {
     private List<Book> books = new ArrayList<>();
-    private Map<String, Integer> operationCounter = new HashMap<>();
 
     public void setBooks(List<Book> books) {
         this.books = books;
@@ -19,49 +17,80 @@ public class BookManager {
         return books;
     }
 
-    public void addBook(Book book) {
-        books.add(book);
-        incrementCounter("dodano");
-    }
-
-    public void deleteBook(String title) {
-        books.removeIf(book -> book.getTitle().equalsIgnoreCase(title));
-        incrementCounter("usunieto");
-    }
-
-    public List<Book> findBooks(String keyword) {
-        List<Book> results = new ArrayList<>();
-        for (Book book : books) {
-            if (book.getTitle().toLowerCase().contains(keyword.toLowerCase()) ||
-                book.getAuthor().toLowerCase().contains(keyword.toLowerCase())) {
-                results.add(book);
+   
+    public boolean addBook(Book book) {
+        for (Book b : books) {
+            if (b.getTitle().equalsIgnoreCase(book.getTitle())
+                    && b.getAuthor().equalsIgnoreCase(book.getAuthor())
+                    && b.getYear() == book.getYear()) {
+                return false; 
             }
         }
-        incrementCounter("wyszukano");
-        return results;
+        books.add(book);
+        return true;
     }
 
+    public boolean deleteBook(String title) {
+        Iterator<Book> iterator = books.iterator();
+        while (iterator.hasNext()) {
+            Book b = iterator.next();
+            if (b.getTitle().equalsIgnoreCase(title.trim())) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+  
+    public List<Book> findBooks(String keyword) {
+        List<Book> result = new ArrayList<>();
+        String lowerKeyword = keyword.toLowerCase();
+        for (Book b : books) {
+            String[] titleWords = b.getTitle().toLowerCase().split("\\s+");
+            String[] authorWords = b.getAuthor().toLowerCase().split("\\s+");
+            boolean found = false;
+            for (String word : titleWords) {
+                if (word.equals(lowerKeyword) || word.startsWith(lowerKeyword)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                for (String word : authorWords) {
+                    if (word.equals(lowerKeyword) || word.startsWith(lowerKeyword)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found)
+                result.add(b);
+        }
+        return result;
+    }
+
+    
     public void listBooks() {
         if (books.isEmpty()) {
-            System.out.println("Brak książek do wyświetlenia.");
+            System.out.println("Brak książek w bazie.");
             return;
         }
-
-        System.out.printf("%-30s %-20s %-4s%n", "Tytuł", "Autor", "Rok");
-        System.out.println("----------------------------------------------------------");
-        for (Book book : books) {
-            System.out.printf("%-30s %-20s %-4d%n", book.getTitle(), book.getAuthor(), book.getYear());
-        }
+        books.stream()
+                .sorted((b1, b2) -> {
+                    int cmp = b1.getTitle().compareToIgnoreCase(b2.getTitle());
+                    if (cmp == 0) {
+                        cmp = b1.getAuthor().compareToIgnoreCase(b2.getAuthor());
+                    }
+                    return cmp;
+                })
+                .forEach(b ->
+                        System.out.printf("%-30s %-20s %-4d%n", b.getTitle(), b.getAuthor(), b.getYear())
+                );
     }
 
     public void printStats() {
-        System.out.println("Statystyki użytkownika:");
-        for (Map.Entry<String, Integer> entry : operationCounter.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
-    }
-
-    private void incrementCounter(String operation) {
-        operationCounter.put(operation, operationCounter.getOrDefault(operation, 0) + 1);
+        System.out.println("Liczba książek: " + books.size());
+        
     }
 }
